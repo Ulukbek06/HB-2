@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Birthday Surprise</title>
+  <meta name="description" content="A birthday greeting page" />
+  <style>
+    :root{
+      --bg1:#070814;
+      --bg2:#0b1030;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --accent1:#ff4fd8;
+      --accent2:#7c5cff;
+      --accent3:#32ffd7;
+      --shadow: 0 20px 70px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(255,79,216,.22), transparent 60%),
+        radial-gradient(1000px 700px at 80% 20%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(900px 650px at 50% 90%, rgba(50,255,215,.14), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow-x:hidden;
+    }
+
+    .stars, .glow{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+    }
+    canvas#stars{width:100%;height:100%}
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width:1100px;
+      margin:0 auto;
+      padding:28px 18px 64px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      font-size:14px;
+      color:var(--muted);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:99px;
+      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.2));
+      box-shadow: 0 0 12px rgba(255,255,255,.4);
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:16px;
+      align-items:stretch;
+      margin-top:10px;
+    }
+    @media (max-width: 920px){
+      .hero{grid-template-columns:1fr}
+    }
+
+    .card{
+      background: linear-gradient(135deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+      position:relative;
+    }
+
+    .card .inner{padding:22px}
+    .title{
+      font-size: clamp(28px, 4vw, 44px);
+      line-height:1.05;
+      margin:0 0 10px;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.45;
+    }
+
+    .gradtext{
+      background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      filter: drop-shadow(0 12px 24px rgba(255,79,216,.12));
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:6px;
+    }
+    button, .btn{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      padding:12px 14px;
+      border-radius:14px;
+      font-weight:600;
+      font-size:14px;
+      color:rgba(255,255,255,.92);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(10px);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    button:hover, .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.11)}
+    button:active, .btn:active{transform: translateY(0px); background: rgba(255,255,255,.09)}
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(255,79,216,.26), rgba(124,92,255,.20));
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 16px 40px rgba(124,92,255,.20);
+    }
+
+    .badgeRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:14px;
+    }
+    .badge{
+      padding:10px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.78);
+      font-size:13px;
+    }
+
+    .right{
+      display:grid;
+      grid-template-rows:auto 1fr;
+      gap:16px;
+    }
+
+    .countdown{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:10px;
+      padding:18px;
+    }
+    .timeBox{
+      text-align:center;
+      padding:14px 10px;
+      border-radius:18px;
+      background: rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+    }
+    .num{
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight:800;
+      letter-spacing:.6px;
+    }
+    .lbl{
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+    }
+    .smallNote{
+      padding:0 18px 18px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .grid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .sectionTitle{
+      margin:0 0 10px;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .list{
+      margin:0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+    .li{
+      padding:12px 12px;
+      border-radius:16px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.86);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .spark{
+      width:10px;height:10px;border-radius:99px;
+      margin-top:5px;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      box-shadow: 0 0 16px rgba(255,79,216,.30);
+      flex: 0 0 auto;
+    }
+
+    .quote{
+      margin:0;
+      font-size:16px;
+      line-height:1.55;
+      color: rgba(255,255,255,.86);
+    }
+    .sig{
+      margin-top:12px;
+      color: var(--muted);
+      font-size:13px;
+    }
+
+    .footer{
+      margin-top:18px;
+      text-align:center;
+      color: rgba(255,255,255,.62);
+      font-size:13px;
+    }
+
+    .ribbon{
+      position:absolute;
+      inset:auto -120px 20px auto;
+      transform: rotate(12deg);
+      padding:10px 140px;
+      background: linear-gradient(90deg, rgba(255,79,216,.28), rgba(124,92,255,.20), rgba(50,255,215,.18));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 18px 60px rgba(0,0,0,.35);
+      color: rgba(255,255,255,.82);
+      font-weight:700;
+      letter-spacing:.8px;
+      text-transform:uppercase;
+      font-size:12px;
+      user-select:none;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:14px;
+      padding:10px 12px;
+      color: rgba(255,255,255,.85);
+      font-size:13px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 16px 55px rgba(0,0,0,.45);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index:10;
+      max-width:min(560px, calc(100% - 24px));
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    /* confetti */
+    canvas#confetti{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:5;
+    }
+
+    /* subtle floating blobs */
+    .blob{
+      position:absolute;
+      width:360px;height:360px;
+      border-radius:999px;
+      filter: blur(32px);
+      opacity:.22;
+      mix-blend-mode: screen;
+      animation: float 10s ease-in-out infinite;
+    }
+    .b1{background: radial-gradient(circle at 30% 30%, var(--accent1), transparent 60%); top:-120px; left:-120px}
+    .b2{background: radial-gradient(circle at 30% 30%, var(--accent2), transparent 60%); bottom:-160px; right:-140px; animation-delay:-3s}
+    .b3{background: radial-gradient(circle at 30% 30%, var(--accent3), transparent 60%); top:40%; left:70%; width:280px;height:280px; animation-delay:-6s}
+
+    @keyframes float{
+      0%,100%{transform: translate(0,0) scale(1)}
+      50%{transform: translate(18px,-14px) scale(1.03)}
+    }
+  </style>
+</head>
+<body>
+  <div class="stars">
+    <canvas id="stars"></canvas>
+  </div>
+  <canvas id="confetti"></canvas>
+
+  <div class="wrap">
+    <div class="topbar">
+      <div class="chip"><span class="dot"></span><span id="topLine">Loading...</span></div>
+      <div class="chip"><span>Tap the buttons</span></div>
+    </div>
+
+    <section class="hero">
+      <div class="card">
+        <div class="ribbon" id="ribbon">January 17</div>
+        <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+        <div class="inner">
+          <h1 class="title">
+            Happy Birthday, <span class="gradtext" id="name">Friend</span> ✨
+          </h1>
+          <p class="subtitle" id="sub">
+            A little page full of love, memories, and loud happiness.
+          </p>
+
+          <div class="actions">
+            <button class="btn-primary" id="btnConfetti">Make it rain confetti</button>
+            <button id="btnWish">Open a random wish</button>
+            <button id="btnCopy">Copy a short message</button>
+          </div>
+
+          <div class="badgeRow" id="badges"></div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="card">
+          <div class="countdown" aria-label="countdown">
+            <div class="timeBox"><div class="num" id="dd">0</div><div class="lbl">Days</div></div>
+            <div class="timeBox"><div class="num" id="hh">0</div><div class="lbl">Hours</div></div>
+            <div class="timeBox"><div class="num" id="mm">0</div><div class="lbl">Minutes</div></div>
+            <div class="timeBox"><div class="num" id="ss">0</div><div class="lbl">Seconds</div></div>
+          </div>
+          <div class="smallNote" id="countNote">
+            Countdown to the birthday moment.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="inner">
+            <h3 class="sectionTitle">Tiny promises for this year</h3>
+            <ul class="list" id="promises"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="inner">
+          <h3 class="sectionTitle">What I love about you</h3>
+          <ul class="list" id="about"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="inner">
+          <h3 class="sectionTitle">One message, forever</h3>
+          <p class="quote" id="bigWish"></p>
+          <div class="sig" id="sig"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer" id="footerLine"></div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+  <script>
+    /* ===========================
+       EDIT THESE SETTINGS
+    ============================ */
+    const birthdayDateISO = "2026-01-17T00:00:00";  // local time
+    const birthdayPersonName = "Your Love";
+    const fromName = "Your Name";
+
+    const thingsHeLoves = [
+      "Good coffee",
+      "Late night walks",
+      "Music that hits the soul",
+      "Laughing until it hurts",
+      "Small adventures",
+      "Cozy mornings"
+    ];
+
+    const aboutHim = [
+      "You make people feel safe just by being around.",
+      "You always find the funny side without being mean.",
+      "You care deeply, even when you act chill.",
+      "You turn normal days into stories.",
+      "You deserve the kind of love you give."
+    ];
+
+    const promises = [
+      "More photos together",
+      "More honest talks",
+      "More spontaneous plans",
+      "More calm, less rush",
+      "More wins, big and small"
+    ];
+
+    const wishes = [
+      "May this year bring you energy, clarity, and moments that feel like magic.",
+      "Wishing you a year full of love, loud laughs, and quiet peace.",
+      "You deserve good people, good luck, and good mornings.",
+      "May everything you want come closer, and everything you need find you.",
+      "Health, joy, and that one dream finally turning real."
+    ];
+
+    const bigWishText =
+      "On your birthday I just want you to feel how loved you are. " +
+      "I’m proud of you, I believe in you, and I’m excited for everything ahead. " +
+      "Let’s make this year beautiful.";
+
+    /* ===========================
+       UI SETUP
+    ============================ */
+    const el = (id) => document.getElementById(id);
+    const pad2 = (n) => String(n).padStart(2, "0");
+
+    el("name").textContent = birthdayPersonName;
+    el("sig").textContent = "With love, " + fromName;
+    el("bigWish").textContent = bigWishText;
+
+    el("ribbon").textContent = new Date(birthdayDateISO).toLocaleDateString(undefined, { month:"long", day:"numeric" });
+
+    el("topLine").textContent = "Made for " + birthdayPersonName;
+    el("footerLine").textContent = "Press confetti when the vibe demands it. ✨";
+
+    const badges = el("badges");
+    thingsHeLoves.slice(0, 6).forEach(t => {
+      const b = document.createElement("div");
+      b.className = "badge";
+      b.textContent = "He loves " + t;
+      badges.appendChild(b);
+    });
+
+    const aboutList = el("about");
+    aboutHim.forEach(t => {
+      const li = document.createElement("li");
+      li.className = "li";
+      li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
+      aboutList.appendChild(li);
+    });
+
+    const promList = el("promises");
+    promises.forEach(t => {
+      const li = document.createElement("li");
+      li.className = "li";
+      li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
+      promList.appendChild(li);
+    });
+
+    /* ===========================
+       COUNTDOWN
+    ============================ */
+    const target = new Date(birthdayDateISO);
+
+    function updateCountdown(){
+      const now = new Date();
+      let diff = target - now;
+
+      if (diff <= 0){
+        el("dd").textContent = "0";
+        el("hh").textContent = "0";
+        el("mm").textContent = "0";
+        el("ss").textContent = "0";
+        el("countNote").textContent = "It’s today. Happy Birthday! 🎉";
+        el("sub").textContent = "Today is your day. Big love, loud happiness, no limits.";
+        return;
+      }
+
+      const s = Math.floor(diff / 1000);
+      const days = Math.floor(s / 86400);
+      const hours = Math.floor((s % 86400) / 3600);
+      const mins = Math.floor((s % 3600) / 60);
+      const secs = s % 60;
+
+      el("dd").textContent = days;
+      el("hh").textContent = pad2(hours);
+      el("mm").textContent = pad2(mins);
+      el("ss").textContent = pad2(secs);
+
+      const pretty = target.toLocaleString(undefined, { year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit" });
+      el("countNote").textContent = "Counting down to " + pretty;
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    /* ===========================
+       TOAST
+    ============================ */
+    const toast = el("toast");
+    let toastTimer = null;
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1700);
+    }
+
+    /* ===========================
+       RANDOM WISH + COPY
+    ============================ */
+    el("btnWish").addEventListener("click", () => {
+      const w = wishes[Math.floor(Math.random() * wishes.length)];
+      el("bigWish").textContent = w;
+      showToast("New wish opened");
+    });
+
+    el("btnCopy").addEventListener("click", async () => {
+      const shortMsg =
+        "Happy Birthday, " + birthdayPersonName + "! " +
+        "Wishing you love, health, and a year full of wins. " +
+        "With love, " + fromName;
+
+      try{
+        await navigator.clipboard.writeText(shortMsg);
+        showToast("Copied");
+      }catch{
+        showToast("Copy blocked, select text manually");
+        alert(shortMsg);
+      }
+    });
+
+    /* ===========================
+       CONFETTI
+    ============================ */
+    const c = el("confetti");
+    const ctx = c.getContext("2d");
+    let W = 0, H = 0;
+
+    function resize(){
+      W = c.width = Math.floor(window.innerWidth * devicePixelRatio);
+      H = c.height = Math.floor(window.innerHeight * devicePixelRatio);
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    const conf = [];
+    const confColors = ["#ff4fd8","#7c5cff","#32ffd7","#ffffff","#ffd166","#06d6a0"];
+    function spawnConfetti(amount){
+      for(let i=0;i<amount;i++){
+        conf.push({
+          x: Math.random() * window.innerWidth,
+          y: -20 - Math.random() * 200,
+          r: 3 + Math.random() * 5,
+          vx: -2 + Math.random() * 4,
+          vy: 2 + Math.random() * 6,
+          rot: Math.random() * Math.PI,
+          vr: -0.2 + Math.random() * 0.4,
+          shape: Math.random() < 0.5 ? "rect" : "circle",
+          color: confColors[Math.floor(Math.random() * confColors.length)],
+          life: 160 + Math.random() * 120
+        });
+      }
+    }
+
+    let anim = null;
+    function tick(){
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+      for(let i=conf.length-1;i>=0;i--){
+        const p = conf[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.rot += p.vr;
+        p.life -= 1;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life/90));
+        ctx.fillStyle = p.color;
+
+        if(p.shape === "rect"){
+          ctx.fillRect(-p.r, -p.r, p.r*2.2, p.r*1.2);
+        }else{
+          ctx.beginPath();
+          ctx.arc(0,0,p.r,0,Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        if(p.y > window.innerHeight + 60 || p.life <= 0){
+          conf.splice(i,1);
+        }
+      }
+
+      if(conf.length > 0){
+        anim = requestAnimationFrame(tick);
+      }else{
+        cancelAnimationFrame(anim);
+        anim = null;
+        ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+      }
+    }
+
+    el("btnConfetti").addEventListener("click", () => {
+      spawnConfetti(180);
+      if(!anim) tick();
+      showToast("Confetti!");
+    });
+
+    /* ===========================
+       STARFIELD
+    ============================ */
+    const starCanvas = el("stars");
+    const sctx = starCanvas.getContext("2d");
+    let sw=0, sh=0, stars=[];
+    function resizeStars(){
+      sw = starCanvas.width = Math.floor(window.innerWidth * devicePixelRatio);
+      sh = starCanvas.height = Math.floor(window.innerHeight * devicePixelRatio);
+      sctx.setTransform(1,0,0,1,0,0);
+      sctx.scale(devicePixelRatio, devicePixelRatio);
+
+      const count = Math.floor(Math.min(220, window.innerWidth / 6));
+      stars = Array.from({length: count}, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: Math.random() * 1.6 + 0.3,
+        a: Math.random() * 0.6 + 0.15,
+        tw: Math.random() * 0.015 + 0.004
+      }));
+    }
+    resizeStars();
+    window.addEventListener("resize", resizeStars);
+
+    function drawStars(){
+      sctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+      for(const st of stars){
+        st.a += Math.sin((Date.now() * st.tw) + st.x) * 0.002;
+        const alpha = Math.max(0.08, Math.min(0.9, st.a));
+        sctx.globalAlpha = alpha;
+        sctx.fillStyle = "#ffffff";
+        sctx.beginPath();
+        sctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
+        sctx.fill();
+      }
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    /* ===========================
+       LITTLE EXTRAS
+    ============================ */
+    const isBirthday = () => {
+      const now = new Date();
+      const d = new Date(birthdayDateISO);
+      return now.getFullYear() === d.getFullYear() &&
+             now.getMonth() === d.getMonth() &&
+             now.getDate() === d.getDate();
+    };
+
+    if(isBirthday()){
+      spawnConfetti(260);
+      if(!anim) tick();
+      el("sub").textContent = "Today is your day. Big love, loud happiness, no limits.";
+    }
+  </script>
+</body>
+</html>
