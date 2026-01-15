@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Birthday Surprise</title>
   <meta name="description" content="A birthday greeting page" />
   <style>
@@ -10,12 +10,12 @@
       --bg1:#070814;
       --bg2:#0b1030;
       --card: rgba(255,255,255,.08);
-      --card2: rgba(255,255,255,.12);
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.70);
       --accent1:#ff4fd8;
       --accent2:#7c5cff;
       --accent3:#32ffd7;
+      --gold:#ffd36b;
       --shadow: 0 20px 70px rgba(0,0,0,.45);
       --radius: 22px;
     }
@@ -34,13 +34,30 @@
       overflow-x:hidden;
     }
 
-    .stars, .glow{
+    .stars{
       position:fixed;
       inset:0;
       pointer-events:none;
       z-index:0;
     }
     canvas#stars{width:100%;height:100%}
+
+    canvas#confetti{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:6;
+    }
+    canvas#fx{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:7;
+    }
 
     .wrap{
       position:relative;
@@ -133,21 +150,26 @@
       cursor:pointer;
       padding:12px 14px;
       border-radius:14px;
-      font-weight:600;
+      font-weight:800;
       font-size:14px;
       color:rgba(255,255,255,.92);
       background: rgba(255,255,255,.08);
       border:1px solid rgba(255,255,255,.16);
       backdrop-filter: blur(10px);
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
       user-select:none;
     }
     button:hover, .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.11)}
     button:active, .btn:active{transform: translateY(0px); background: rgba(255,255,255,.09)}
     .btn-primary{
-      background: linear-gradient(135deg, rgba(255,79,216,.26), rgba(124,92,255,.20));
+      background: linear-gradient(135deg, rgba(255,79,216,.28), rgba(124,92,255,.22));
       border-color: rgba(255,255,255,.22);
-      box-shadow: 0 16px 40px rgba(124,92,255,.20);
+      box-shadow: 0 16px 40px rgba(124,92,255,.22);
+    }
+    .btn-wow{
+      background: linear-gradient(135deg, rgba(50,255,215,.22), rgba(255,79,216,.22));
+      border-color: rgba(255,255,255,.26);
+      box-shadow: 0 18px 55px rgba(50,255,215,.16);
     }
 
     .badgeRow{
@@ -187,7 +209,7 @@
     }
     .num{
       font-size: clamp(22px, 3vw, 34px);
-      font-weight:800;
+      font-weight:950;
       letter-spacing:.6px;
     }
     .lbl{
@@ -271,7 +293,7 @@
       border:1px solid rgba(255,255,255,.18);
       box-shadow: 0 18px 60px rgba(0,0,0,.35);
       color: rgba(255,255,255,.82);
-      font-weight:700;
+      font-weight:900;
       letter-spacing:.8px;
       text-transform:uppercase;
       font-size:12px;
@@ -294,7 +316,7 @@
       opacity:0;
       pointer-events:none;
       transition: opacity .18s ease, transform .18s ease;
-      z-index:10;
+      z-index:30;
       max-width:min(560px, calc(100% - 24px));
     }
     .toast.show{
@@ -302,17 +324,6 @@
       transform: translateX(-50%) translateY(-2px);
     }
 
-    /* confetti */
-    canvas#confetti{
-      position:fixed;
-      inset:0;
-      width:100%;
-      height:100%;
-      pointer-events:none;
-      z-index:5;
-    }
-
-    /* subtle floating blobs */
     .blob{
       position:absolute;
       width:360px;height:360px;
@@ -325,10 +336,376 @@
     .b1{background: radial-gradient(circle at 30% 30%, var(--accent1), transparent 60%); top:-120px; left:-120px}
     .b2{background: radial-gradient(circle at 30% 30%, var(--accent2), transparent 60%); bottom:-160px; right:-140px; animation-delay:-3s}
     .b3{background: radial-gradient(circle at 30% 30%, var(--accent3), transparent 60%); top:40%; left:70%; width:280px;height:280px; animation-delay:-6s}
-
     @keyframes float{
       0%,100%{transform: translate(0,0) scale(1)}
       50%{transform: translate(18px,-14px) scale(1.03)}
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:
+        radial-gradient(800px 600px at 25% 20%, rgba(255,79,216,.22), transparent 60%),
+        radial-gradient(700px 550px at 80% 30%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(800px 600px at 50% 85%, rgba(50,255,215,.18), transparent 60%),
+        rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .overlay.hide{
+      opacity:0;
+      pointer-events:none;
+      transform: scale(1.02);
+    }
+    .overlayCard{
+      width:min(820px, 100%);
+      border-radius: 26px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+      overflow:hidden;
+      position:relative;
+    }
+    .overlayInner{
+      padding:26px 22px 22px;
+      position:relative;
+    }
+    .pulseRing{
+      position:absolute;
+      inset:-120px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.18), transparent 60%);
+      animation: ring 2.2s ease-in-out infinite;
+      opacity:.7;
+    }
+    @keyframes ring{
+      0%{transform: scale(.92); opacity:.35}
+      50%{transform: scale(1.02); opacity:.8}
+      100%{transform: scale(.92); opacity:.35}
+    }
+    .wowTitle{
+      margin:0 0 10px;
+      font-size: clamp(34px, 6vw, 62px);
+      line-height:1.02;
+      letter-spacing:.3px;
+      text-align:center;
+    }
+    .wowSub{
+      margin:0 0 18px;
+      text-align:center;
+      color: rgba(255,255,255,.80);
+      font-size:16px;
+      line-height:1.5;
+    }
+    .hintRow{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .tiny{
+      font-size:13px;
+      color: rgba(255,255,255,.72);
+      text-align:center;
+      margin-top:10px;
+    }
+
+    .shake{animation: shake .6s ease-in-out 1;}
+    @keyframes shake{
+      0%,100%{transform: translateX(0)}
+      20%{transform: translateX(-6px)}
+      40%{transform: translateX(6px)}
+      60%{transform: translateX(-4px)}
+      80%{transform: translateX(4px)}
+    }
+
+    .photoHeader{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .photoMeta{
+      color: var(--muted);
+      font-size:13px;
+      line-height:1.4;
+      margin-top:2px;
+      max-width: 60ch;
+    }
+    .masonry{
+      column-count: 3;
+      column-gap: 12px;
+      padding: 0 22px 22px;
+    }
+    @media (max-width: 980px){ .masonry{column-count:2} }
+    @media (max-width: 560px){ .masonry{column-count:1} }
+
+    figure.shot{
+      margin: 0 0 12px;
+      break-inside: avoid;
+      border-radius: 20px;
+      overflow:hidden;
+      position:relative;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow: 0 16px 50px rgba(0,0,0,.30);
+      transform: translateY(10px);
+      opacity: 0;
+      transition: transform .45s ease, opacity .45s ease, box-shadow .2s ease;
+      cursor: pointer;
+    }
+    figure.shot.in{
+      transform: translateY(0px);
+      opacity: 1;
+    }
+    figure.shot:hover{
+      box-shadow: 0 22px 70px rgba(0,0,0,.40);
+    }
+    figure.shot::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(500px 220px at 20% 10%, rgba(255,79,216,.18), transparent 60%),
+        radial-gradient(450px 220px at 80% 0%, rgba(50,255,215,.14), transparent 60%),
+        linear-gradient(180deg, transparent 60%, rgba(0,0,0,.40));
+      opacity:.9;
+      pointer-events:none;
+    }
+
+    figure.shot img{
+      width:100%;
+      display:block;
+      transform: scale(1.02);
+      filter: blur(14px) saturate(1.15) contrast(1.05);
+      transition: filter .35s ease, transform .35s ease;
+      aspect-ratio: auto;
+    }
+    figure.shot img.loaded{
+      filter: blur(0px) saturate(1.05) contrast(1.02);
+      transform: scale(1);
+    }
+    figure.shot:hover img.loaded{
+      transform: scale(1.02);
+    }
+
+    figcaption.cap{
+      position:absolute;
+      left:12px;
+      right:12px;
+      bottom:10px;
+      z-index:2;
+      font-size:13px;
+      color: rgba(255,255,255,.86);
+      text-shadow: 0 10px 30px rgba(0,0,0,.55);
+      line-height:1.25;
+    }
+
+    .lightbox{
+      position:fixed;
+      inset:0;
+      z-index:25;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(10px);
+    }
+    .lightbox.show{display:flex;}
+    .lbCard{
+      width: min(980px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      box-shadow: 0 30px 90px rgba(0,0,0,.60);
+      overflow:hidden;
+      position:relative;
+    }
+    .lbTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:12px 12px 0;
+    }
+    .lbCount{
+      color: rgba(255,255,255,.74);
+      font-size:13px;
+      padding:10px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .lbBtns{display:flex; gap:8px; flex-wrap:wrap}
+    .lbImgWrap{
+      padding:12px;
+    }
+    .lbImg{
+      width:100%;
+      max-height: 72vh;
+      object-fit: contain;
+      display:block;
+      border-radius: 18px;
+      background: rgba(0,0,0,.20);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .lbCap{
+      padding:0 14px 14px;
+      color: rgba(255,255,255,.84);
+      font-size:14px;
+      line-height:1.4;
+    }
+    .lbHint{
+      color: rgba(255,255,255,.60);
+      font-size:12px;
+      padding: 0 14px 14px;
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{animation:none !important; transition:none !important}
+    }
+
+    .extrasGrid{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+    @media (max-width: 920px){
+      .extrasGrid{grid-template-columns:1fr}
+    }
+
+    .fieldRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+    }
+    .input{
+      flex: 1 1 220px;
+      min-width: 180px;
+      padding:12px 12px;
+      border-radius:14px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.90);
+      outline:none;
+    }
+    .input:focus{
+      border-color: rgba(255,255,255,.26);
+      box-shadow: 0 0 0 3px rgba(124,92,255,.12);
+    }
+
+    .details{
+      padding:12px 12px;
+      border-radius:16px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .details summary{
+      cursor:pointer;
+      font-weight:800;
+      color: rgba(255,255,255,.90);
+    }
+    .details p{
+      margin:10px 0 0;
+      color: rgba(255,255,255,.82);
+      line-height:1.5;
+    }
+    .details img{
+      width:100%;
+      margin-top:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+    }
+
+    .gameBox{
+      position:relative;
+      border-radius:18px;
+      background: rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.14);
+      overflow:hidden;
+      min-height: 240px;
+    }
+    .gameTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:12px;
+    }
+    .gameScore{
+      padding:10px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.84);
+      font-size:13px;
+    }
+    .gameArea{
+      position:relative;
+      height: 260px;
+    }
+    .heart{
+      position:absolute;
+      top:-40px;
+      user-select:none;
+      cursor:pointer;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,.45));
+      animation-name: fall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes fall{
+      0%{transform: translateY(0) scale(1); opacity: 0}
+      10%{opacity: 1}
+      100%{transform: translateY(340px) scale(1.05); opacity: 0}
+    }
+
+    .reward{
+      display:none;
+      margin-top:10px;
+      padding:12px 12px;
+      border-radius:16px;
+      background: linear-gradient(135deg, rgba(255,79,216,.18), rgba(50,255,215,.14));
+      border:1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.88);
+    }
+
+    .overlayFinale{
+      position:fixed;
+      inset:0;
+      z-index:40;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:
+        radial-gradient(900px 700px at 20% 10%, rgba(255,79,216,.24), transparent 60%),
+        radial-gradient(900px 700px at 80% 20%, rgba(124,92,255,.24), transparent 60%),
+        radial-gradient(900px 700px at 50% 90%, rgba(50,255,215,.18), transparent 60%),
+        rgba(0,0,0,.62);
+      backdrop-filter: blur(12px);
+      opacity:0;
+      pointer-events:none;
+      transform: scale(1.02);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .overlayFinale.show{
+      opacity:1;
+      pointer-events:auto;
+      transform: scale(1);
     }
   </style>
 </head>
@@ -336,30 +713,47 @@
   <div class="stars">
     <canvas id="stars"></canvas>
   </div>
+
   <canvas id="confetti"></canvas>
+  <canvas id="fx"></canvas>
+
+  <div class="overlay" id="overlay">
+    <div class="overlayCard" id="overlayCard">
+      <div class="pulseRing"></div>
+      <div class="overlayInner">
+        <h1 class="wowTitle"><span class="gradtext">Surprise</span> ✨</h1>
+        <p class="wowSub" id="wowSub">Нажми кнопку и открой подарок. Тут будет много блёсток и немного магии.</p>
+        <div class="hintRow">
+          <button class="btn-primary btn-wow" id="btnOpen">Открыть сюрприз</button>
+          <button id="btnMini">Сделать вау</button>
+        </div>
+        <div class="tiny">Если хочешь, добавь музыку. Кнопка есть на странице.</div>
+      </div>
+    </div>
+  </div>
 
   <div class="wrap">
     <div class="topbar">
-      <div class="chip"><span class="dot"></span><span id="topLine">Loading...</span></div>
-      <div class="chip"><span>Tap the buttons</span></div>
+      <div class="chip"><span class="dot"></span><span id="topLine">Загрузка...</span></div>
+      <div class="chip"><span>Жми кнопки</span></div>
     </div>
 
     <section class="hero">
       <div class="card">
-        <div class="ribbon" id="ribbon">January 17</div>
+        <div class="ribbon" id="ribbon">17 января</div>
         <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
         <div class="inner">
           <h1 class="title">
-            Happy Birthday, <span class="gradtext" id="name">Friend</span> ✨
+            Happy Birthday, <span class="gradtext" id="name">Любимая</span> ✨
           </h1>
-          <p class="subtitle" id="sub">
-            A little page full of love, memories, and loud happiness.
-          </p>
+          <p class="subtitle" id="sub">Маленькая страница про любовь, воспоминания и твою красоту.</p>
 
           <div class="actions">
-            <button class="btn-primary" id="btnConfetti">Make it rain confetti</button>
-            <button id="btnWish">Open a random wish</button>
-            <button id="btnCopy">Copy a short message</button>
+            <button class="btn-primary" id="btnConfetti">Засыпать конфетти</button>
+            <button id="btnFireworks">Запустить салют</button>
+            <button id="btnWish">Открыть пожелание</button>
+            <button id="btnCopy">Скопировать сообщение</button>
+            <button id="btnMusic">Музыка</button>
           </div>
 
           <div class="badgeRow" id="badges"></div>
@@ -369,19 +763,17 @@
       <div class="right">
         <div class="card">
           <div class="countdown" aria-label="countdown">
-            <div class="timeBox"><div class="num" id="dd">0</div><div class="lbl">Days</div></div>
-            <div class="timeBox"><div class="num" id="hh">0</div><div class="lbl">Hours</div></div>
-            <div class="timeBox"><div class="num" id="mm">0</div><div class="lbl">Minutes</div></div>
-            <div class="timeBox"><div class="num" id="ss">0</div><div class="lbl">Seconds</div></div>
+            <div class="timeBox"><div class="num" id="dd">0</div><div class="lbl">Дней</div></div>
+            <div class="timeBox"><div class="num" id="hh">00</div><div class="lbl">Часов</div></div>
+            <div class="timeBox"><div class="num" id="mm">00</div><div class="lbl">Минут</div></div>
+            <div class="timeBox"><div class="num" id="ss">00</div><div class="lbl">Секунд</div></div>
           </div>
-          <div class="smallNote" id="countNote">
-            Countdown to the birthday moment.
-          </div>
+          <div class="smallNote" id="countNote">Отсчёт до твоего дня.</div>
         </div>
 
         <div class="card">
           <div class="inner">
-            <h3 class="sectionTitle">Tiny promises for this year</h3>
+            <h3 class="sectionTitle">Маленькие обещания на этот год</h3>
             <ul class="list" id="promises"></ul>
           </div>
         </div>
@@ -391,126 +783,275 @@
     <section class="grid">
       <div class="card">
         <div class="inner">
-          <h3 class="sectionTitle">What I love about you</h3>
+          <h3 class="sectionTitle">Что я в тебе люблю</h3>
           <ul class="list" id="about"></ul>
         </div>
       </div>
 
       <div class="card">
         <div class="inner">
-          <h3 class="sectionTitle">One message, forever</h3>
+          <h3 class="sectionTitle">Одно сообщение навсегда</h3>
           <p class="quote" id="bigWish"></p>
           <div class="sig" id="sig"></div>
         </div>
       </div>
     </section>
 
+    <section class="grid" style="grid-template-columns:1fr; margin-top:16px;">
+      <div class="card">
+        <div class="inner">
+          <div class="photoHeader">
+            <div>
+              <h3 class="sectionTitle">Наши фото моменты</h3>
+              <div class="photoMeta" id="photoMeta">Листай вниз, открывай фото, свайпай влево и вправо.</div>
+            </div>
+            <div class="actions" style="margin:0">
+              <button class="btn-primary" id="btnSlideshow">Слайдшоу</button>
+              <button id="btnShuffle">Перемешать</button>
+              <button id="btnBurst">Больше блёсток</button>
+            </div>
+          </div>
+        </div>
+        <div class="masonry" id="gallery"></div>
+      </div>
+    </section>
+
+    <section class="extrasGrid" id="extras">
+      <div class="card">
+        <div class="inner">
+          <h3 class="sectionTitle">Секретная коробка</h3>
+          <p class="subtitle" style="margin:0">Введи код. Можно слово или цифры.</p>
+          <div class="fieldRow">
+            <input class="input" id="secretInput" placeholder="Код" />
+            <button class="btn-primary"	bt id="btnSecret">Открыть</button>
+          </div>
+          <div class="reward" id="secretReward"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="inner">
+          <h3 class="sectionTitle">Карта нашей истории</h3>
+          <p class="subtitle" style="margin:0">Таймлайн. Открывай пункты.</p>
+          <div id="timeline"></div>
+        </div>
+      </div>
+
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="inner">
+          <h3 class="sectionTitle">Ловилка сердечек</h3>
+          <p class="subtitle" style="margin:0">20 секунд. Поймай нужное количество и откроется награда.</p>
+          <div class="gameBox">
+            <div class="gameTop">
+              <div class="gameScore" id="gameScore">Счёт: 0</div>
+              <div class="actions" style="margin:0">
+                <button class="btn-primary" id="btnGameStart">Старт</button>
+                <button id="btnGameStop">Стоп</button>
+                <button id="btnFinale">Финальный вау</button>
+              </div>
+            </div>
+            <div class="gameArea" id="gameArea"></div>
+          </div>
+          <div class="reward" id="gameReward"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="overlayFinale" id="finaleOverlay">
+      <div class="overlayCard" id="finaleCard">
+        <div class="pulseRing"></div>
+        <div class="overlayInner">
+          <h1 class="wowTitle"><span class="gradtext">Happy Birthday</span> ✨</h1>
+          <p class="wowSub" id="finaleText">Ты мой самый красивый выбор. Сегодня твой день.</p>
+          <div class="hintRow">
+            <button class="btn-primary btn-wow" id="finaleAgain">Ещё раз вау</button>
+            <button id="finaleClose">Закрыть</button>
+          </div>
+          <div class="tiny">Жми ещё раз вау, если хочется салютов без остановки.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="footer" id="footerLine"></div>
   </div>
 
-  <div class="toast" id="toast">Saved</div>
+  <div class="toast" id="toast">Ок</div>
+
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lbCard">
+      <div class="lbTop">
+        <div class="lbCount" id="lbCount">1 из 1</div>
+        <div class="lbBtns">
+          <button id="lbPrev">Назад</button>
+          <button id="lbNext">Вперёд</button>
+          <button class="btn-primary" id="lbPlay">Авто</button>
+          <button id="lbClose">Закрыть</button>
+        </div>
+      </div>
+      <div class="lbImgWrap">
+        <img class="lbImg" id="lbImg" alt="" />
+      </div>
+      <div class="lbCap" id="lbCap"></div>
+      <div class="lbHint">Клавиши, свайпы, или кнопки сверху.</div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="none">
+    <source src="mp3.mp3" type="audio/mpeg">
+  </audio>
 
   <script>
     /* ===========================
-       EDIT THESE SETTINGS
+       НАСТРОЙКИ
     ============================ */
-    const birthdayDateISO = "2026-01-17T00:00:00";  // local time
-    const birthdayPersonName = "Your Love";
-    const fromName = "Your Name";
+    const birthdayDateISO = "2026-01-17T00:00:00";
+    const birthdayPersonName = "Твоя Любимая";
+    const fromName = "Жумаида";
 
-    const thingsHeLoves = [
-      "Good coffee",
-      "Late night walks",
-      "Music that hits the soul",
-      "Laughing until it hurts",
-      "Small adventures",
-      "Cozy mornings"
+    const thingsSheLoves = [
+      "Холодный квас",
+      "Ночные прогулки",
+      "Музыку, от которой мурашки",
+      "Смех до слёз",
+      "Маленькие приключения",
+      "Уютные моменты",
+      "Твои объятия",
+      "Красивые закаты",
+      "Спонтанные планы",
+      "Закупаться сладастьями и сидет в чат рулетке"
     ];
 
-    const aboutHim = [
-      "You make people feel safe just by being around.",
-      "You always find the funny side without being mean.",
-      "You care deeply, even when you act chill.",
-      "You turn normal days into stories.",
-      "You deserve the kind of love you give."
+    const aboutHer = [
+      "С тобой рядом спокойно, как дома.",
+      "Ты умеешь делать день легче одним взглядом.",
+      "Ты очень сильная, даже когда молчишь об этом.",
+      "Ты превращаешь обычные дни в историю.",
+      "Ты заслуживаешь любви без условий."
     ];
 
     const promises = [
-      "More photos together",
-      "More honest talks",
-      "More spontaneous plans",
-      "More calm, less rush",
-      "More wins, big and small"
+      "Больше ночных переписок",
+      "Больше честных разговоров",
+      "Больше спонтанных планов",
+      "Больше спокойствия, меньше спешки",
+      "Больше побед, больших и маленьких"
     ];
 
     const wishes = [
-      "May this year bring you energy, clarity, and moments that feel like magic.",
-      "Wishing you a year full of love, loud laughs, and quiet peace.",
-      "You deserve good people, good luck, and good mornings.",
-      "May everything you want come closer, and everything you need find you.",
-      "Health, joy, and that one dream finally turning real."
+      "Пусть этот год принесёт тебе энергию, ясность и моменты, от которых светло внутри.",
+      "Желаю тебе любви, громкого смеха и тихого спокойствия.",
+      "Пусть рядом будут хорошие люди и счастливые случайности.",
+      "Пусть всё, чего ты хочешь, станет ближе, а всё нужное найдёт тебя.",
+      "Здоровья, радости и чтобы одна мечта наконец стала реальностью."
     ];
 
     const bigWishText =
-      "On your birthday I just want you to feel how loved you are. " +
-      "I’m proud of you, I believe in you, and I’m excited for everything ahead. " +
-      "Let’s make this year beautiful.";
+      "В твой день я хочу, чтобы ты почувствовала, как сильно тебя любят. " +
+      "Я горжусь тобой, верю в тебя и очень жду всё, что впереди. " +
+      "Давай сделаем этот год красивым.";
 
     /* ===========================
-       UI SETUP
+       ФОТО
+    ============================ */
+    let photos = [
+      { src: "фото1.jpg", cap: "Я рада, что нашла такую подругу как ты" },
+      { src: "фото2.jpg", cap: "Ты - моя зая💞. Я всегда поддержу тебя и буду помогать во всех твоих желаниях.✨" },
+      { src: "фото3.jpg", cap: "Помню наши вечерние прогулки" },
+      { src: "фото4.jpg", cap: "Ты красивая всегда" },
+      { src: "фото5.jpg", cap: "Мне нравится все твои праймы" },
+      { src: "фото6.jpg", cap: "Я очень благодарна вселенной за то что подарил мне тебя 💋" }
+    ];
+
+    /* ===========================
+       EXTRAS НАСТРОЙКИ
+    ============================ */
+    const secretEntries = [
+      { code: "Кисунь", text: "Я тя люблю не смотря на расстояние✨" },
+      { code: "Чино", text: "Я скучаю по прогулкам с вами)" },
+      { code: "Зая", text: " тобою очень дорожу💋✨" },
+    ];
+
+    const finaleTextDefault = "Ты мой самый красивый выбор. Сегодня твой день, и я рядом.";
+
+    /* ===========================
+       УТИЛИТЫ
     ============================ */
     const el = (id) => document.getElementById(id);
+    const qsa = (sel) => Array.from(document.querySelectorAll(sel));
     const pad2 = (n) => String(n).padStart(2, "0");
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const safeText = (id, text) => { const e = el(id); if (e) e.textContent = text; };
+    const on = (id, evt, fn, opts) => { const e = el(id); if (e) e.addEventListener(evt, fn, opts); return e; };
 
-    el("name").textContent = birthdayPersonName;
-    el("sig").textContent = "With love, " + fromName;
-    el("bigWish").textContent = bigWishText;
+    /* ===========================
+       БАЗОВАЯ ИНИЦИАЛИЗАЦИЯ
+    ============================ */
+    safeText("name", birthdayPersonName);
+    safeText("sig", "С любовью, " + fromName);
+    safeText("bigWish", bigWishText);
 
-    el("ribbon").textContent = new Date(birthdayDateISO).toLocaleDateString(undefined, { month:"long", day:"numeric" });
+    const ribbon = el("ribbon");
+    if (ribbon) ribbon.textContent = new Date(birthdayDateISO).toLocaleDateString("ru-RU", { month: "long", day: "numeric" });
 
-    el("topLine").textContent = "Made for " + birthdayPersonName;
-    el("footerLine").textContent = "Press confetti when the vibe demands it. ✨";
+    safeText("topLine", "Сделано для " + birthdayPersonName);
+    safeText("footerLine", "Жми вау, когда сердце просит. ✨");
 
     const badges = el("badges");
-    thingsHeLoves.slice(0, 6).forEach(t => {
-      const b = document.createElement("div");
-      b.className = "badge";
-      b.textContent = "He loves " + t;
-      badges.appendChild(b);
-    });
+    if (badges) {
+      badges.innerHTML = "";
+      thingsSheLoves.slice(0, 12).forEach(t => {
+        const b = document.createElement("div");
+        b.className = "badge";
+        b.textContent = "Она любит " + t;
+        badges.appendChild(b);
+      });
+    }
 
     const aboutList = el("about");
-    aboutHim.forEach(t => {
-      const li = document.createElement("li");
-      li.className = "li";
-      li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
-      aboutList.appendChild(li);
-    });
+    if (aboutList) {
+      aboutList.innerHTML = "";
+      aboutHer.forEach(t => {
+        const li = document.createElement("li");
+        li.className = "li";
+        li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
+        aboutList.appendChild(li);
+      });
+    }
 
     const promList = el("promises");
-    promises.forEach(t => {
-      const li = document.createElement("li");
-      li.className = "li";
-      li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
-      promList.appendChild(li);
-    });
+    if (promList) {
+      promList.innerHTML = "";
+      promises.forEach(t => {
+        const li = document.createElement("li");
+        li.className = "li";
+        li.innerHTML = '<span class="spark"></span><span>' + t + "</span>";
+        promList.appendChild(li);
+      });
+    }
 
     /* ===========================
        COUNTDOWN
     ============================ */
     const target = new Date(birthdayDateISO);
 
-    function updateCountdown(){
+    function updateCountdown() {
+      const dd = el("dd"), hh = el("hh"), mm = el("mm"), ss = el("ss");
+      const note = el("countNote");
+      const sub = el("sub");
+
+      if (!dd || !hh || !mm || !ss || !note) return;
+
       const now = new Date();
       let diff = target - now;
 
-      if (diff <= 0){
-        el("dd").textContent = "0";
-        el("hh").textContent = "0";
-        el("mm").textContent = "0";
-        el("ss").textContent = "0";
-        el("countNote").textContent = "It’s today. Happy Birthday! 🎉";
-        el("sub").textContent = "Today is your day. Big love, loud happiness, no limits.";
+      if (diff <= 0) {
+        dd.textContent = "0";
+        hh.textContent = "00";
+        mm.textContent = "00";
+        ss.textContent = "00";
+        note.textContent = "Это сегодня. С днём рождения! 🎉";
+        if (sub) sub.textContent = "Сегодня твой день. Любовь без лимитов.";
         return;
       }
 
@@ -520,14 +1061,18 @@
       const mins = Math.floor((s % 3600) / 60);
       const secs = s % 60;
 
-      el("dd").textContent = days;
-      el("hh").textContent = pad2(hours);
-      el("mm").textContent = pad2(mins);
-      el("ss").textContent = pad2(secs);
+      dd.textContent = String(days);
+      hh.textContent = pad2(hours);
+      mm.textContent = pad2(mins);
+      ss.textContent = pad2(secs);
 
-      const pretty = target.toLocaleString(undefined, { year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit" });
-      el("countNote").textContent = "Counting down to " + pretty;
+      const pretty = target.toLocaleString("ru-RU", {
+        year: "numeric", month: "long", day: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
+      note.textContent = "Отсчёт до " + pretty;
     }
+
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
@@ -536,173 +1081,761 @@
     ============================ */
     const toast = el("toast");
     let toastTimer = null;
-    function showToast(msg){
+
+    function showToast(msg) {
+      if (!toast) return;
       toast.textContent = msg;
       toast.classList.add("show");
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove("show"), 1700);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
     }
 
     /* ===========================
        RANDOM WISH + COPY
     ============================ */
-    el("btnWish").addEventListener("click", () => {
-      const w = wishes[Math.floor(Math.random() * wishes.length)];
-      el("bigWish").textContent = w;
-      showToast("New wish opened");
+    on("btnWish", "click", () => {
+      safeText("bigWish", wishes[Math.floor(Math.random() * wishes.length)]);
+      showToast("Пожелание открыто");
+      popMini();
     });
 
-    el("btnCopy").addEventListener("click", async () => {
+    on("btnCopy", "click", async () => {
       const shortMsg =
-        "Happy Birthday, " + birthdayPersonName + "! " +
-        "Wishing you love, health, and a year full of wins. " +
-        "With love, " + fromName;
+        "С днём рождения, " + birthdayPersonName + "! " +
+        "Желаю тебе любви, здоровья и года, в котором всё складывается. " +
+        "С любовью, " + fromName;
 
-      try{
+      try {
         await navigator.clipboard.writeText(shortMsg);
-        showToast("Copied");
-      }catch{
-        showToast("Copy blocked, select text manually");
+        showToast("Скопировано");
+      } catch {
+        showToast("Копирование закрыто");
         alert(shortMsg);
       }
     });
 
     /* ===========================
-       CONFETTI
+       MUSIC
+    ============================ */
+    const audio = el("audio");
+    let musicOn = false;
+
+    on("btnMusic", "click", async () => {
+      if (!audio) return showToast("Блок audio не найден");
+      try {
+        if (!musicOn) {
+          await audio.play();
+          musicOn = true;
+          showToast("Музыка включена");
+        } else {
+          audio.pause();
+          musicOn = false;
+          showToast("Музыка выключена");
+        }
+      } catch {
+        showToast("Положи music.mp3 рядом и включи звук");
+      }
+    });
+
+    /* ===========================
+       CONFETTI + PARTY MODE
     ============================ */
     const c = el("confetti");
-    const ctx = c.getContext("2d");
-    let W = 0, H = 0;
+    const ctx = c ? c.getContext("2d") : null;
 
-    function resize(){
-      W = c.width = Math.floor(window.innerWidth * devicePixelRatio);
-      H = c.height = Math.floor(window.innerHeight * devicePixelRatio);
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.scale(devicePixelRatio, devicePixelRatio);
+    function resizeCanvas(canvas, context) {
+      if (!canvas || !context) return;
+      canvas.width = Math.floor(window.innerWidth * devicePixelRatio);
+      canvas.height = Math.floor(window.innerHeight * devicePixelRatio);
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.scale(devicePixelRatio, devicePixelRatio);
     }
-    window.addEventListener("resize", resize);
-    resize();
+
+    resizeCanvas(c, ctx);
+    window.addEventListener("resize", () => resizeCanvas(c, ctx));
 
     const conf = [];
-    const confColors = ["#ff4fd8","#7c5cff","#32ffd7","#ffffff","#ffd166","#06d6a0"];
-    function spawnConfetti(amount){
-      for(let i=0;i<amount;i++){
+    const confColors = ["#ff4fd8", "#7c5cff", "#32ffd7", "#ffffff", "#ffd166", "#06d6a0", "#ffd36b", "#ff7a59"];
+    let anim = null;
+
+    function drawStar(r) {
+      const spikes = 5;
+      const outer = r;
+      const inner = r * 0.45;
+      ctx.beginPath();
+      for (let i = 0; i < spikes * 2; i++) {
+        const a = (Math.PI / spikes) * i;
+        const rr = i % 2 === 0 ? outer : inner;
+        ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function spawnConfetti(amount, originX = null, originY = null, power = 1) {
+      if (!ctx) return;
+      const ox = originX ?? (window.innerWidth * 0.5);
+      const oy = originY ?? (-20);
+
+      for (let i = 0; i < amount; i++) {
+        const speed = rand(2, 9) * power;
+        const ang = rand(-Math.PI, Math.PI);
+        const shapeRoll = Math.random();
+
         conf.push({
-          x: Math.random() * window.innerWidth,
-          y: -20 - Math.random() * 200,
-          r: 3 + Math.random() * 5,
-          vx: -2 + Math.random() * 4,
-          vy: 2 + Math.random() * 6,
-          rot: Math.random() * Math.PI,
-          vr: -0.2 + Math.random() * 0.4,
-          shape: Math.random() < 0.5 ? "rect" : "circle",
-          color: confColors[Math.floor(Math.random() * confColors.length)],
-          life: 160 + Math.random() * 120
+          x: ox + rand(-30, 30),
+          y: oy + rand(-30, 30),
+          r: rand(2.2, 6.8),
+          vx: Math.cos(ang) * rand(0.2, 1.2) + rand(-1.4, 1.4),
+          vy: Math.sin(ang) * rand(0.2, 1.2) + speed,
+          rot: rand(0, Math.PI * 2),
+          vr: rand(-0.25, 0.25),
+          shape: shapeRoll < 0.55 ? "rect" : (shapeRoll < 0.82 ? "circle" : "star"),
+          color: pick(confColors),
+          life: 240 + Math.random() * 190,
+          g: rand(0.02, 0.06),
+          wob: rand(0.6, 1.7)
         });
       }
     }
 
-    let anim = null;
-    function tick(){
-      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+    function tick() {
+      if (!ctx) return;
 
-      for(let i=conf.length-1;i>=0;i--){
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let i = conf.length - 1; i >= 0; i--) {
         const p = conf[i];
-        p.x += p.vx;
+        p.x += p.vx + Math.sin((Date.now() * 0.002) + p.x * 0.01) * 0.2 * p.wob;
         p.y += p.vy;
-        p.vy += 0.03;
+        p.vy += p.g;
         p.rot += p.vr;
         p.life -= 1;
 
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
-        ctx.globalAlpha = Math.max(0, Math.min(1, p.life/90));
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 120));
         ctx.fillStyle = p.color;
 
-        if(p.shape === "rect"){
-          ctx.fillRect(-p.r, -p.r, p.r*2.2, p.r*1.2);
-        }else{
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.r, -p.r, p.r * 2.8, p.r * 1.25);
+        } else if (p.shape === "circle") {
           ctx.beginPath();
-          ctx.arc(0,0,p.r,0,Math.PI*2);
+          ctx.arc(0, 0, p.r, 0, Math.PI * 2);
           ctx.fill();
+        } else {
+          drawStar(p.r * 1.25);
         }
+
         ctx.restore();
 
-        if(p.y > window.innerHeight + 60 || p.life <= 0){
-          conf.splice(i,1);
-        }
+        if (p.y > window.innerHeight + 90 || p.life <= 0) conf.splice(i, 1);
       }
 
-      if(conf.length > 0){
-        anim = requestAnimationFrame(tick);
-      }else{
+      if (conf.length > 0) anim = requestAnimationFrame(tick);
+      else {
         cancelAnimationFrame(anim);
         anim = null;
-        ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       }
     }
 
-    el("btnConfetti").addEventListener("click", () => {
-      spawnConfetti(180);
-      if(!anim) tick();
-      showToast("Confetti!");
+    function confettiSuper() {
+      spawnConfetti(520, rand(window.innerWidth * 0.25, window.innerWidth * 0.75), -10, 1.2);
+      spawnConfetti(320, rand(window.innerWidth * 0.25, window.innerWidth * 0.75), -10, 1.0);
+      if (!anim) tick();
+    }
+
+    function confettiBurst() {
+      const x = rand(window.innerWidth * 0.2, window.innerWidth * 0.8);
+      const y = rand(window.innerHeight * 0.15, window.innerHeight * 0.45);
+      spawnConfetti(300, x, y, 1.2);
+      spawnConfetti(200, x, y, 1.0);
+      if (!anim) tick();
+    }
+
+    let partyTimer = null;
+
+    function startPartyMode(ms = 3800) {
+      clearInterval(partyTimer);
+      const end = Date.now() + ms;
+
+      partyTimer = setInterval(() => {
+        confettiBurst();
+        spawnFireworkBurst(rand(window.innerWidth * 0.2, window.innerWidth * 0.8), rand(window.innerHeight * 0.18, window.innerHeight * 0.5));
+        if (Date.now() > end) {
+          clearInterval(partyTimer);
+          partyTimer = null;
+        }
+      }, 420);
+    }
+
+    on("btnConfetti", "click", () => {
+      confettiSuper();
+      showToast("Конфетти пошло");
+    });
+
+    on("btnBurst", "click", () => {
+      startPartyMode(2500);
+      showToast("Вау режим");
+    });
+
+    /* ===========================
+       FIREWORKS CANVAS
+    ============================ */
+    const fx = el("fx");
+    const fctx = fx ? fx.getContext("2d") : null;
+
+    resizeCanvas(fx, fctx);
+    window.addEventListener("resize", () => resizeCanvas(fx, fctx));
+
+    const sparks = [];
+    let fxAnim = null;
+
+    function spawnFireworkBurst(x, y) {
+      if (!fctx) return;
+      const n = 95 + Math.floor(Math.random() * 85);
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2) * (i / n) + rand(-0.13, 0.13);
+        const sp = rand(2.2, 7.2);
+        sparks.push({
+          x, y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          r: rand(1.1, 2.2),
+          life: 95 + Math.random() * 55,
+          color: pick(confColors),
+          g: rand(0.02, 0.06)
+        });
+      }
+    }
+
+    function fxTick() {
+      if (!fctx) return;
+
+      fctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const p = sparks[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.g;
+        p.life -= 1;
+
+        fctx.save();
+        fctx.globalAlpha = Math.max(0, Math.min(1, p.life / 65));
+        fctx.fillStyle = p.color;
+        fctx.beginPath();
+        fctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        fctx.fill();
+        fctx.restore();
+
+        if (p.life <= 0) sparks.splice(i, 1);
+      }
+
+      if (sparks.length > 0) fxAnim = requestAnimationFrame(fxTick);
+      else {
+        cancelAnimationFrame(fxAnim);
+        fxAnim = null;
+        fctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+    }
+
+    function fireworksShow() {
+      for (let k = 0; k < 6; k++) {
+        spawnFireworkBurst(
+          rand(window.innerWidth * 0.2, window.innerWidth * 0.8),
+          rand(window.innerHeight * 0.18, window.innerHeight * 0.5)
+        );
+      }
+      if (!fxAnim) fxTick();
+    }
+
+    on("btnFireworks", "click", () => {
+      fireworksShow();
+      confettiBurst();
+      showToast("Салют");
+    });
+
+    /* ===========================
+       WOW OPEN
+    ============================ */
+    const overlay = el("overlay");
+    const overlayCard = el("overlayCard");
+
+    function popMini() {
+      spawnConfetti(150, rand(window.innerWidth * 0.25, window.innerWidth * 0.75), rand(window.innerHeight * 0.1, window.innerHeight * 0.35), 1);
+      if (!anim) tick();
+      spawnFireworkBurst(rand(window.innerWidth * 0.25, window.innerWidth * 0.75), rand(window.innerHeight * 0.2, window.innerHeight * 0.45));
+      if (!fxAnim) fxTick();
+    }
+
+    function revealAllPhotos() {
+      qsa("figure.shot").forEach((elm, i) => setTimeout(() => elm.classList.add("in"), i * 25));
+    }
+
+    function openSurprise() {
+      if (overlay) overlay.classList.add("hide");
+      fireworksShow();
+
+      spawnConfetti(980, window.innerWidth * 0.5, window.innerHeight * 0.18, 1.25);
+      spawnConfetti(620, window.innerWidth * 0.5, window.innerHeight * 0.18, 1.05);
+
+      if (!anim) tick();
+      startPartyMode(4200);
+      showToast("Вау");
+
+      setTimeout(() => { if (overlay) overlay.remove(); }, 700);
+      setTimeout(() => { revealAllPhotos(); }, 650);
+    }
+
+    on("btnOpen", "click", openSurprise);
+
+    on("btnMini", "click", () => {
+      if (overlayCard) {
+        overlayCard.classList.add("shake");
+        setTimeout(() => overlayCard.classList.remove("shake"), 650);
+      }
+      popMini();
     });
 
     /* ===========================
        STARFIELD
     ============================ */
     const starCanvas = el("stars");
-    const sctx = starCanvas.getContext("2d");
-    let sw=0, sh=0, stars=[];
-    function resizeStars(){
-      sw = starCanvas.width = Math.floor(window.innerWidth * devicePixelRatio);
-      sh = starCanvas.height = Math.floor(window.innerHeight * devicePixelRatio);
-      sctx.setTransform(1,0,0,1,0,0);
+    const sctx = starCanvas ? starCanvas.getContext("2d") : null;
+    let stars = [];
+
+    function resizeStars() {
+      if (!starCanvas || !sctx) return;
+      starCanvas.width = Math.floor(window.innerWidth * devicePixelRatio);
+      starCanvas.height = Math.floor(window.innerHeight * devicePixelRatio);
+      sctx.setTransform(1, 0, 0, 1, 0, 0);
       sctx.scale(devicePixelRatio, devicePixelRatio);
 
-      const count = Math.floor(Math.min(220, window.innerWidth / 6));
-      stars = Array.from({length: count}, () => ({
+      const count = Math.floor(Math.min(280, window.innerWidth / 5));
+      stars = Array.from({ length: count }, () => ({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        r: Math.random() * 1.6 + 0.3,
-        a: Math.random() * 0.6 + 0.15,
-        tw: Math.random() * 0.015 + 0.004
+        r: Math.random() * 1.7 + 0.25,
+        a: Math.random() * 0.6 + 0.12,
+        tw: Math.random() * 0.018 + 0.004
       }));
     }
-    resizeStars();
-    window.addEventListener("resize", resizeStars);
 
-    function drawStars(){
-      sctx.clearRect(0,0,window.innerWidth, window.innerHeight);
-      for(const st of stars){
+    function drawStars() {
+      if (!sctx) return;
+      sctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (const st of stars) {
         st.a += Math.sin((Date.now() * st.tw) + st.x) * 0.002;
-        const alpha = Math.max(0.08, Math.min(0.9, st.a));
+        const alpha = Math.max(0.07, Math.min(0.9, st.a));
         sctx.globalAlpha = alpha;
         sctx.fillStyle = "#ffffff";
         sctx.beginPath();
-        sctx.arc(st.x, st.y, st.r, 0, Math.PI*2);
+        sctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
         sctx.fill();
       }
       requestAnimationFrame(drawStars);
     }
+
+    resizeStars();
+    window.addEventListener("resize", resizeStars);
     drawStars();
 
     /* ===========================
-       LITTLE EXTRAS
+       ФОТО ГАЛЕРЕЯ
+    ============================ */
+    const gallery = el("gallery");
+    let io = null;
+
+    function hookReveal() {
+      if (!("IntersectionObserver" in window)) return revealAllPhotos();
+      if (io) io.disconnect();
+
+      io = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08 });
+
+      qsa("figure.shot").forEach(elm => io.observe(elm));
+    }
+
+    function renderGallery() {
+      if (!gallery) return;
+      gallery.innerHTML = "";
+
+      const meta = el("photoMeta");
+      if (meta) meta.textContent = "Фото: " + photos.length + " шт. Открывай любое, свайпай, включай авто.";
+
+      const frag = document.createDocumentFragment();
+
+      photos.forEach((p, idx) => {
+        const fig = document.createElement("figure");
+        fig.className = "shot";
+        fig.dataset.index = String(idx);
+
+        const img = document.createElement("img");
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.alt = p.cap || ("Фото " + (idx + 1));
+        img.src = p.src;
+
+        img.addEventListener("load", () => img.classList.add("loaded"), { once: true });
+
+        const cap = document.createElement("figcaption");
+        cap.className = "cap";
+        cap.textContent = p.cap || "";
+
+        fig.appendChild(img);
+        fig.appendChild(cap);
+
+        fig.addEventListener("click", () => {
+          openLightbox(idx);
+          confettiBurst();
+        });
+
+        frag.appendChild(fig);
+      });
+
+      gallery.appendChild(frag);
+      hookReveal();
+    }
+
+    on("btnShuffle", "click", () => {
+      photos = photos
+        .map(v => ({ v, s: Math.random() }))
+        .sort((a, b) => a.s - b.s)
+        .map(x => x.v);
+
+      renderGallery();
+      showToast("Перемешано");
+      popMini();
+    });
+
+    renderGallery();
+
+    /* ===========================
+       LIGHTBOX
+    ============================ */
+    const lightbox = el("lightbox");
+    const lbImg = el("lbImg");
+    const lbCap = el("lbCap");
+    const lbCount = el("lbCount");
+    let lbIndex = 0;
+    let lbAuto = null;
+
+    function setLB(index) {
+      if (!photos.length || !lbImg || !lbCount) return;
+      lbIndex = (index + photos.length) % photos.length;
+
+      const p = photos[lbIndex];
+      lbImg.src = p.src;
+      lbImg.alt = p.cap || ("Фото " + (lbIndex + 1));
+      if (lbCap) lbCap.textContent = p.cap || "";
+      lbCount.textContent = (lbIndex + 1) + " из " + photos.length;
+
+      const next = photos[(lbIndex + 1) % photos.length]?.src;
+      if (next) {
+        const im = new Image();
+        im.src = next;
+      }
+    }
+
+    function openLightbox(index) {
+      if (!lightbox || !photos.length) return;
+      lightbox.classList.add("show");
+      lightbox.setAttribute("aria-hidden", "false");
+      setLB(index);
+      showToast("Открыто");
+    }
+
+    function stopAuto() {
+      if (!lbAuto) return;
+      clearInterval(lbAuto);
+      lbAuto = null;
+      showToast("Авто выключено");
+    }
+
+    function closeLightbox() {
+      if (!lightbox) return;
+      lightbox.classList.remove("show");
+      lightbox.setAttribute("aria-hidden", "true");
+      stopAuto();
+    }
+
+    function nextLB() { setLB(lbIndex + 1); }
+    function prevLB() { setLB(lbIndex - 1); }
+
+    function startAuto() {
+      stopAuto();
+      lbAuto = setInterval(() => {
+        nextLB();
+        spawnConfetti(90, rand(window.innerWidth * 0.35, window.innerWidth * 0.65), rand(window.innerHeight * 0.18, window.innerHeight * 0.35), 0.95);
+        if (!anim) tick();
+      }, 1800);
+      showToast("Авто включено");
+    }
+
+    on("lbClose", "click", closeLightbox);
+    on("lbNext", "click", nextLB);
+    on("lbPrev", "click", prevLB);
+    on("lbPlay", "click", () => lbAuto ? stopAuto() : startAuto());
+
+    if (lightbox) {
+      lightbox.addEventListener("click", (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (!lightbox || !lightbox.classList.contains("show")) return;
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") nextLB();
+      if (e.key === "ArrowLeft") prevLB();
+    });
+
+    let touchX = null;
+
+    if (lightbox) {
+      lightbox.addEventListener("touchstart", (e) => {
+        touchX = e.touches?.[0]?.clientX ?? null;
+      }, { passive: true });
+
+      lightbox.addEventListener("touchend", (e) => {
+        if (touchX === null) return;
+        const x2 = e.changedTouches?.[0]?.clientX ?? touchX;
+        const dx = x2 - touchX;
+
+        if (Math.abs(dx) > 45) {
+          if (dx < 0) nextLB();
+          else prevLB();
+        }
+        touchX = null;
+      });
+    }
+
+    on("btnSlideshow", "click", () => {
+      openLightbox(0);
+      startAuto();
+      fireworksShow();
+    });
+
+    /* ===========================
+       SECRET BOX
+    ============================ */
+    function normalizeCode(s) {
+      return String(s || "").trim().toLowerCase().replace(/\s+/g, "");
+    }
+
+    on("btnSecret", "click", () => {
+      const inp = el("secretInput");
+      const reward = el("secretReward");
+      if (!inp || !reward) return showToast("Секретный блок не найден");
+
+      const v = normalizeCode(inp.value);
+      const hit = secretEntries.find(x => normalizeCode(x.code) === v);
+
+      if (hit) {
+        reward.style.display = "block";
+        reward.textContent = hit.text;
+        showToast("Открыто");
+        fireworksShow();
+        spawnConfetti(900, window.innerWidth * 0.5, window.innerHeight * 0.18, 1.25);
+        if (!anim) tick();
+        startPartyMode(3200);
+        launchFinale();
+      } else {
+        showToast("Не тот код");
+        popMini();
+      }
+    });
+
+    /* ===========================
+       TIMELINE
+    ============================ */
+    const timelineEvents = [
+  { date: "", title: "Первая встреча", text: "Наша первая встреча была очень простой, но именно поэтому особенной.", photo: "фото7.jpg" },
+  { date: "", title: "Смех, который нас связал", text: "Наша дружба это моменты, когда смеёшься до слёз и не хочется, чтобы день заканчивался. Мы собирали воспоминания из шуток, прогулок и спонтанных идей, и каждый такой момент делал нас ещё ближе. Эти весёлые времена навсегда останутся в сердце. 💛", photo: "фото11.jpg" },
+  { date: "", title: "Сквозь расстояние", text: "Между нами километры, но они не могут ослабить то, что живёт в сердце. Наша любовь сильнее расстояния: она в каждом сообщении, в каждом воспоминании и в тихой вере друг в друга. Мы далеко, но всё равно рядом по настоящему. 💫", photo: "фото9.jpg" },
+];
+    function renderTimeline() {
+      const t = el("timeline");
+      if (!t) return;
+
+      t.innerHTML = "";
+      timelineEvents.forEach((e) => {
+        const d = document.createElement("details");
+        d.className = "details";
+
+        const s = document.createElement("summary");
+        s.textContent = e.date + "  " + e.title;
+
+        const p = document.createElement("p");
+        p.textContent = e.text;
+
+        d.appendChild(s);
+        d.appendChild(p);
+
+        if (e.photo) {
+          const img = document.createElement("img");
+          img.loading = "lazy";
+          img.decoding = "async";
+          img.src = e.photo;
+          img.alt = e.title;
+          d.appendChild(img);
+        }
+
+        d.addEventListener("toggle", () => { if (d.open) confettiBurst(); });
+        t.appendChild(d);
+      });
+    }
+
+    renderTimeline();
+
+    /* ===========================
+       HEART GAME
+    ============================ */
+    const gameArea = el("gameArea");
+    const gameReward = el("gameReward");
+    let gameOn = false;
+    let gameScore = 0;
+    const gameTarget = 12;
+    let spawnTimer = null;
+    let endTimer = null;
+
+    function updateGameScore() {
+      safeText("gameScore", "Счёт: " + gameScore + " из " + gameTarget);
+    }
+
+    function clearHearts() {
+      if (!gameArea) return;
+      qsa("#gameArea .heart").forEach(h => h.remove());
+    }
+
+    function spawnHeart() {
+      if (!gameArea) return;
+
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.textContent = pick(["💖", "💗", "💘", "💝", "💞", "💕"]);
+      h.style.left = Math.floor(rand(6, 92)) + "%";
+      h.style.fontSize = rand(18, 34) + "px";
+      h.style.animationDuration = rand(1.4, 2.6) + "s";
+
+      h.addEventListener("click", () => {
+        if (!gameOn) return;
+        h.remove();
+        gameScore += 1;
+        updateGameScore();
+
+        spawnConfetti(60, rand(window.innerWidth * 0.35, window.innerWidth * 0.65), rand(window.innerHeight * 0.18, window.innerHeight * 0.35), 0.95);
+        if (!anim) tick();
+
+        if (gameScore >= gameTarget) finishGame(true);
+      });
+
+      h.addEventListener("animationend", () => h.remove(), { once: true });
+      gameArea.appendChild(h);
+    }
+
+    function startGame() {
+      if (!gameArea || !gameReward) return showToast("Игра не найдена");
+      if (gameOn) return;
+
+      gameOn = true;
+      gameScore = 0;
+      updateGameScore();
+      gameReward.style.display = "none";
+      clearHearts();
+
+      showToast("Поехали");
+      popMini();
+
+      spawnTimer = setInterval(spawnHeart, 160);
+      endTimer = setTimeout(() => finishGame(false), 20000);
+    }
+
+    function finishGame(win) {
+      if (!gameOn) return;
+
+      gameOn = false;
+      clearInterval(spawnTimer);
+      clearTimeout(endTimer);
+      spawnTimer = null;
+      endTimer = null;
+
+      setTimeout(clearHearts, 250);
+
+      if (win) {
+        if (gameReward) {
+          gameReward.textContent = "Награда: ещё одно признание. Я люблю тебя. И хочу рядом тебя всегда.";
+          gameReward.style.display = "block";
+        }
+        fireworksShow();
+        spawnConfetti(1100, window.innerWidth * 0.5, window.innerHeight * 0.18, 1.3);
+        if (!anim) tick();
+        startPartyMode(4200);
+        launchFinale();
+        showToast("Ты выиграла");
+      } else {
+        showToast("Ещё раз");
+        popMini();
+      }
+    }
+
+    on("btnGameStart", "click", startGame);
+    on("btnGameStop", "click", () => finishGame(false));
+
+    /* ===========================
+       FINALE OVERLAY
+    ============================ */
+    const finaleOverlay = el("finaleOverlay");
+    safeText("finaleText", finaleTextDefault);
+
+    function launchFinale() {
+      if (!finaleOverlay) return;
+      finaleOverlay.classList.add("show");
+      fireworksShow();
+      spawnConfetti(1400, window.innerWidth * 0.5, window.innerHeight * 0.16, 1.35);
+      if (!anim) tick();
+      startPartyMode(5200);
+    }
+
+    on("btnFinale", "click", launchFinale);
+    on("finaleClose", "click", () => { if (finaleOverlay) finaleOverlay.classList.remove("show"); });
+    on("finaleAgain", "click", () => { launchFinale(); showToast("Вау"); });
+
+    if (finaleOverlay) {
+      finaleOverlay.addEventListener("click", (e) => {
+        if (e.target === finaleOverlay) finaleOverlay.classList.remove("show");
+      });
+    }
+
+    /* ===========================
+       AUTO BIRTHDAY EXTRA
     ============================ */
     const isBirthday = () => {
       const now = new Date();
       const d = new Date(birthdayDateISO);
       return now.getFullYear() === d.getFullYear() &&
-             now.getMonth() === d.getMonth() &&
-             now.getDate() === d.getDate();
+        now.getMonth() === d.getMonth() &&
+        now.getDate() === d.getDate();
     };
 
-    if(isBirthday()){
-      spawnConfetti(260);
-      if(!anim) tick();
-      el("sub").textContent = "Today is your day. Big love, loud happiness, no limits.";
+    if (isBirthday()) {
+      safeText("sub", "Сегодня твой день. Любовь без лимитов.");
+      setTimeout(() => {
+        fireworksShow();
+        spawnConfetti(1200, window.innerWidth * 0.5, window.innerHeight * 0.18, 1.3);
+        if (!anim) tick();
+        startPartyMode(5200);
+      }, 600);
     }
   </script>
 </body>
